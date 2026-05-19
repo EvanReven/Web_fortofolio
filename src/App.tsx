@@ -325,7 +325,7 @@ export default function App() {
     { id: "keahlian", name: "Cek Keahlian", icon: Code2, section: "Navigasi", action: () => document.getElementById("stack")?.scrollIntoView({ behavior: "smooth" }) },
     { id: "kontak", name: "Hubungi Yulius", icon: Mail, section: "Navigasi", action: () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }) },
     { id: "chat", name: "Buka Chatbot AI", icon: MessageSquare, section: "Aksi", action: () => setIsChatOpen(true) },
-    { id: "github", name: "Buka GitHub", icon: Github, section: "Media Sosial", action: () => window.open("https://github.com", "_blank") },
+    { id: "github", name: "Buka GitHub", icon: Github, section: "Media Sosial", action: () => window.open("https://github.com/EvanReven", "_blank") },
     { id: "linkedin", name: "Buka LinkedIn", icon: Linkedin, section: "Media Sosial", action: () => window.open("https://linkedin.com", "_blank") },
   ];
 
@@ -732,7 +732,7 @@ export default function App() {
           <div className="mt-32 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-8">
               {[
-                { icon: Github, href: "#" },
+                { icon: Github, href: "https://github.com/EvanReven" },
                 { icon: Twitter, href: "#" },
                 { icon: Linkedin, href: "#" }
               ].map((social, idx) => (

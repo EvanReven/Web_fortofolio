@@ -19,6 +19,7 @@ KEY INFO:
 - Name: Yulius Evan Karunia
 - Email: yuliusevankarunia@gmail.com
 - WhatsApp: +62 852 4976 1877
+- GitHub: https://github.com/EvanReven
 - Projects: Krypto Pulse, Reffcode ID.
 
 RULES:

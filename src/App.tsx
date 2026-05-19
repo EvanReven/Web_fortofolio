@@ -46,6 +46,15 @@ function ChatAssistant({
   const [isLoading, setIsLoading] = useState(false);
   const [teaserIndex, setTeaserIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -53,12 +62,6 @@ function ChatAssistant({
     }, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -206,6 +209,7 @@ function ChatAssistant({
                   </div>
                 </div>
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Input */}

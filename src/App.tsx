@@ -19,7 +19,9 @@ import {
   Code2,
   Mail,
   Search,
-  Briefcase
+  Briefcase,
+  Sun,
+  Moon
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -145,7 +147,7 @@ function ChatAssistant({
               stiffness: 200,
               mass: 1
             }}
-            className="w-[90vw] sm:w-[400px] h-[500px] bg-vibe-surface rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden mb-4"
+            className="w-[90vw] sm:w-[400px] h-[500px] bg-vibe-surface rounded-2xl border border-black/10 dark:border-white/10 shadow-2xl flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
             <div className="p-4 bg-white/5 border-b border-white/10 flex justify-between items-center">
@@ -284,6 +286,36 @@ function ChatAssistant({
   );
 }
 
+// --- Local Time Component ---
+function LocalTime() {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Indonesia Time (WIB - UTC+7)
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'Asia/Jakarta',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+  const timeString = time.toLocaleTimeString('id-ID', options);
+
+  return (
+    <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1 bg-white/5 border border-white/10 rounded-full font-mono text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400">
+      <div className="flex items-center gap-1 sm:gap-1.5 border-r border-white/10 pr-2 sm:pr-3">
+        <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-vibe-primary animate-pulse" />
+        <span className="hidden sm:block">Jakarta, ID</span>
+        <span className="sm:hidden">JKT</span>
+      </div>
+      <span className="text-white font-bold">{timeString} WIB</span>
+    </div>
+  );
+}
+
 const NAV_LINKS = [
   { name: "Beranda", href: "#home" },
   { name: "Proyek", href: "#projects" },
@@ -309,21 +341,33 @@ const PROJECTS = [
 ];
 
 const TECH_STACK = [
-  "React", "TypeScript", "Tailwind CSS", "Motion", "Node.js", "Firebase", "PostgreSQL", "Next.js", "Three.js", "Python", "Rust", "GCP"
+  "PHP", "TypeScript", "CodeIgniter", "JavaScript", "Node.js", "Vercel", "PostgreSQL", "Next.js", "Three.js", "Python", "HTML", "CSS"
 ];
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [theme, setTheme] = useState("dark");
   const [scrolled, setScrolled] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
+    } else {
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
 
   const commands = [
     { id: "proyek", name: "Lihat Proyek", icon: Briefcase, section: "Navigasi", action: () => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" }) },
     { id: "keahlian", name: "Cek Keahlian", icon: Code2, section: "Navigasi", action: () => document.getElementById("stack")?.scrollIntoView({ behavior: "smooth" }) },
     { id: "kontak", name: "Hubungi Yulius", icon: Mail, section: "Navigasi", action: () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }) },
+    { id: "theme", name: "Ganti Tema (Dark/Light)", icon: theme === "dark" ? Sun : Moon, section: "Aksi", action: () => setTheme(theme === "dark" ? "light" : "dark") },
     { id: "chat", name: "Buka Chatbot AI", icon: MessageSquare, section: "Aksi", action: () => setIsChatOpen(true) },
     { id: "github", name: "Buka GitHub", icon: Github, section: "Media Sosial", action: () => window.open("https://github.com/EvanReven", "_blank") },
     { id: "linkedin", name: "Buka LinkedIn", icon: Linkedin, section: "Media Sosial", action: () => window.open("https://linkedin.com", "_blank") },
@@ -385,9 +429,9 @@ export default function App() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative w-full h-full sm:h-auto sm:max-w-2xl bg-vibe-surface sm:border border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              className="relative w-full h-full sm:h-auto sm:max-w-2xl bg-vibe-surface sm:border border-black/10 dark:border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             >
-              <div className="p-4 sm:p-4 border-b border-white/10 flex items-center gap-3 bg-vibe-surface/80 backdrop-blur-md sticky top-0 z-10">
+              <div className="p-4 sm:p-4 border-b border-black/10 dark:border-white/10 flex items-center gap-3 bg-vibe-surface/80 backdrop-blur-md sticky top-0 z-10">
                 <Search className="w-5 h-5 text-gray-400" />
                 <input 
                   autoFocus
@@ -475,7 +519,7 @@ export default function App() {
 
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        scrolled ? "bg-vibe-bg/80 backdrop-blur-md border-b border-white/10 py-4" : "bg-transparent py-6"
+        scrolled ? "bg-vibe-bg/80 backdrop-blur-md border-b border-black/5 dark:border-white/10 py-4" : "bg-transparent py-6"
       }`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           <motion.div 
@@ -488,6 +532,8 @@ export default function App() {
             </div>
             <span className="font-display text-xl tracking-tighter uppercase font-bold">YULIUS.DEV</span>
           </motion.div>
+
+          <LocalTime />
 
           <div className="hidden md:flex items-center gap-8">
             <button 
@@ -529,6 +575,13 @@ export default function App() {
             >
               Resume
             </motion.button>
+
+            <button 
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="p-2 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors text-gray-400 hover:text-white"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
 
           <button className="md:hidden" onClick={() => setIsMenuOpen(!isMenuOpen)}>
@@ -554,11 +607,11 @@ export default function App() {
             
             <h1 className="font-display text-5xl sm:text-6xl md:text-9xl leading-[0.85] tracking-tighter uppercase mb-6 drop-shadow-2xl">
               WEB <br />
-              <span className="text-transparent" style={{ WebkitTextStroke: '1px rgba(255,255,255,0.4)', color: 'transparent' }}>DEVELOPER</span> <br />
+              <span className="text-transparent" style={{ WebkitTextStroke: theme === 'dark' ? '1px rgba(255,255,255,0.4)' : '1px rgba(0,0,0,0.2)', color: 'transparent' }}>DEVELOPER</span> <br />
               EXPERT
             </h1>
             
-            <p className="max-w-xl text-lg md:text-xl text-gray-400 font-medium mb-10 leading-relaxed">
+            <p className="max-w-xl text-lg md:text-xl text-gray-600 dark:text-gray-400 font-medium mb-10 leading-relaxed">
               Halo, saya Yulius Evan Karunia. Full-stack Developer yang menghadirkan solusi digital modern, skalabel, dan berperforma tinggi untuk bisnis Anda. Dari ide hingga deployment.
             </p>
 
@@ -680,7 +733,7 @@ export default function App() {
       </section>
 
       {/* Expertise */}
-      <section className="py-20 md:py-32 bg-vibe-surface/20 border-y border-white/5">
+      <section className="py-20 md:py-32 bg-vibe-surface/20 border-y border-black/5 dark:border-white/5">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-16">
             <div className="space-y-6">
@@ -688,21 +741,21 @@ export default function App() {
                 <Layout className="w-6 h-6" />
               </div>
               <h4 className="text-2xl font-display font-bold uppercase tracking-tight">Pengembangan Web & UI</h4>
-              <p className="text-gray-500 font-medium">Spesialis pembuatan website responsif dengan desain modern yang optimal untuk SEO dan kenyamanan pengguna (UX).</p>
+              <p className="text-gray-600 dark:text-gray-500 font-medium">Spesialis pembuatan website responsif dengan desain modern yang optimal untuk SEO dan kenyamanan pengguna (UX).</p>
             </div>
             <div className="space-y-6">
               <div className="w-12 h-12 flex items-center justify-center bg-vibe-accent text-white rounded-sm shadow-[0_0_15px_rgba(59,130,246,0.5)]">
                 <Layers className="w-6 h-6" />
               </div>
               <h4 className="text-2xl font-display font-bold uppercase tracking-tight">Sistem & Backend</h4>
-              <p className="text-gray-500 font-medium">Arsitektur aplikasi web yang kokoh menggunakan Node.js, Next.js, dan optimasi database PostgreSQL.</p>
+              <p className="text-gray-600 dark:text-gray-500 font-medium">Arsitektur aplikasi web yang kokoh menggunakan Node.js, Next.js, dan optimasi database PostgreSQL.</p>
             </div>
             <div className="space-y-6">
               <div className="w-12 h-12 flex items-center justify-center bg-purple-500 text-white rounded-sm shadow-[0_0_15px_rgba(168,85,247,0.5)]">
                 <Cpu className="w-6 h-6" />
               </div>
               <h4 className="text-2xl font-display font-bold uppercase tracking-tight">Integrasi AI</h4>
-              <p className="text-gray-500 font-medium">Memanfaatkan LLM tercanggih dan model machine learning untuk membangun aplikasi yang lebih pintar dan adaptif.</p>
+              <p className="text-gray-600 dark:text-gray-500 font-medium">Memanfaatkan LLM tercanggih dan model machine learning untuk membangun aplikasi yang lebih pintar dan adaptif.</p>
             </div>
           </div>
         </div>
@@ -742,16 +795,16 @@ export default function App() {
                   whileTap={{ scale: 0.9 }}
                   transition={{ type: "spring", stiffness: 300 }}
                   href={social.href} 
-                  className="text-gray-500 transition-colors"
+                  className="text-gray-400 dark:text-gray-500 hover:text-white transition-colors"
                 >
                   <social.icon className="w-5 h-5" />
                 </motion.a>
               ))}
             </div>
-            <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest text-center">
+            <p className="text-[10px] font-mono text-gray-500 dark:text-gray-600 uppercase tracking-widest text-center">
               &copy; 2026 YULIUS EVAN KARUNIA. DIBUAT DENGAN LOGIKA & SEMANGAT.
             </p>
-            <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest hidden md:block">
+            <p className="text-[10px] font-mono text-gray-500 dark:text-gray-600 uppercase tracking-widest hidden md:block">
               BUILD: v2.4.92 / STABIL
             </p>
           </div>
@@ -783,6 +836,13 @@ export default function App() {
               >
                 Cari / Search
                 <Search className="w-8 h-8" />
+              </button>
+              <button 
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="text-4xl sm:text-6xl font-display font-bold uppercase tracking-tighter text-gray-500 flex items-center justify-between group active:text-vibe-primary"
+              >
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+                {theme === "dark" ? <Sun className="w-8 h-8" /> : <Moon className="w-8 h-8" />}
               </button>
               {NAV_LINKS.map((link, i) => (
                 <motion.a

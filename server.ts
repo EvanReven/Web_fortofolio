@@ -20,6 +20,8 @@ KEY INFO:
 - Email: yuliusevankarunia@gmail.com
 - WhatsApp: +62 852 4976 1877
 - GitHub: https://github.com/EvanReven
+- Location: Jakarta, Indonesia (WIB - UTC+7)
+- Timezone: Asia/Jakarta (WIB)
 - Projects: Krypto Pulse, Reffcode ID.
 
 RULES:

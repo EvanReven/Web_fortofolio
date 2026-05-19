@@ -7,14 +7,24 @@
   --font-display: "Space Grotesk", sans-serif;
 
   --color-vibe-primary: #00FF9C;
-  --color-vibe-bg: #050505;
-  --color-vibe-surface: #121212;
+  --color-vibe-bg: var(--vibe-bg);
+  --color-vibe-surface: var(--vibe-surface);
   --color-vibe-accent: #3b82f6;
+}
+
+:root {
+  --vibe-bg: #050505;
+  --vibe-surface: #121212;
+}
+
+.light {
+  --vibe-bg: #ffffff;
+  --vibe-surface: #f3f4f6;
 }
 
 @layer base {
   body {
-    @apply bg-vibe-bg text-gray-100 font-sans;
+    @apply bg-vibe-bg text-gray-900 dark:text-gray-100 font-sans transition-colors duration-300;
   }
 }
 

@@ -19,16 +19,13 @@ KEY INFO:
 - Name: Yulius Evan Karunia
 - Email: yuliusevankarunia@gmail.com
 - WhatsApp: +62 852 4976 1877
-- Projects:
-  1. Krypto Pulse: Real-time crypto price tracking and analysis using advanced API integration.
-  2. Reffcode ID: Trusted crypto referral portal in Indonesia connecting users with Bappebti-registered exchanges.
-- Expertise: Web Development & UI (React, Next.js, SEO), Systems & Backend (Node.js, PostgreSQL), AI Integration.
+- Projects: Krypto Pulse, Reffcode ID.
 
-YOUR GOAL:
-Answer questions about Yulius's projects, skills, and contact info. 
-Keep responses concise, professional, and friendly.
-If the user asks in Indonesian, answer in Indonesian.
-If they ask about something you don't know, suggest they contact Yulius directly at the email or WhatsApp above.
+RULES:
+1. MANDATORY: The first response to any new user MUST be in Indonesia (Bahasa Indonesia).
+2. For subsequent messages, follow the language used by the user.
+3. Be extremely concise to save tokens. Use bullet points where appropriate.
+4. Keep answers professional and expert.
 `;
 
 // API routes
@@ -41,9 +38,12 @@ app.post("/api/chat", async (req, res) => {
       return res.status(500).json({ error: "OpenRouter API key is not configured. Please add OPENROUTER_API_KEY in Settings > Secrets." });
     }
 
+    // Hemat token: Limit history to last 6 messages
+    const limitedHistory = (history || []).slice(-6);
+
     const messages = [
       { role: "system", content: SYSTEM_INSTRUCTION },
-      ...(history || []).map((h: any) => ({
+      ...limitedHistory.map((h: any) => ({
         role: h.role === "model" ? "assistant" : h.role,
         content: h.parts ? h.parts[0].text : h.content
       })),
@@ -61,6 +61,7 @@ app.post("/api/chat", async (req, res) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash", 
         messages: messages,
+        max_tokens: 300, // Token efficiency
       })
     });
 

@@ -1,14 +1,22 @@
 /**
  * Cloudflare Worker for handling Chatbot requests via OpenRouter
- * Use this code in your Cloudflare Worker Dashboard (Quick Edit).
- * Make sure to provide OPENROUTER_API_KEY in Settings > Variables.
+ * 1. Go to Cloudflare Dashboard > Workers & Pages > Create Worker.
+ * 2. Paste this code into the editor (Clear existing code).
+ * 3. Go to Settings > Variables > Add Variable.
+ * 4. Add Name: OPENROUTER_API_KEY and Value: (Your OpenRouter Key).
+ * 5. Save and Deploy.
  */
 
 const SYSTEM_INSTRUCTION = `
 You are the AI Assistant for Yulius Evan Karunia's Portfolio.
 Yulius is a Full-stack Web Developer Expert from Indonesia.
 Focus on: React, TypeScript, Node.js, Web Development, and AI integration.
-Keep answers professional, helpful, and concise. Be friendly but expert.
+
+RULES:
+1. MANDATORY: The first response to any new user MUST be in indonesia.
+2. For subsequent messages, follow the language used by the user.
+3. Be extremely concise to save tokens. Use bullet points where appropriate.
+4. Keep answers professional and expert.
 `;
 
 const corsHeaders = {
@@ -17,7 +25,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
-// Listen for fetch events (Service Worker Syntax)
+// Listen for fetch events
 addEventListener("fetch", (event) => {
   event.respondWith(handleRequest(event.request));
 });
@@ -29,23 +37,26 @@ async function handleRequest(request) {
   }
 
   if (request.method !== "POST") {
-    return new Response("Method not allowed", { status: 405, headers: corsHeaders });
+    return new Response("Method not allowed. Use POST.", { status: 405, headers: corsHeaders });
   }
 
   try {
     const { message, history } = await request.json();
 
-    // In Service Worker syntax, environment variables are global variables
+    // Check for API Key in environment
     if (typeof OPENROUTER_API_KEY === "undefined") {
-      return new Response(JSON.stringify({ error: "API Key (OPENROUTER_API_KEY) not found in Worker variables" }), { 
+      return new Response(JSON.stringify({ error: "OPENROUTER_API_KEY is not defined in Cloudflare Variables" }), { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       });
     }
 
+    // Hemat token: Limit history to last 6 messages (3 turns)
+    const limitedHistory = (history || []).slice(-6);
+
     const messages = [
       { role: "system", content: SYSTEM_INSTRUCTION },
-      ...(history || []).map((h) => ({
+      ...limitedHistory.map((h) => ({
         role: h.role === "model" ? "assistant" : h.role,
         content: h.content || (h.parts && h.parts[0] ? h.parts[0].text : "")
       })),
@@ -63,6 +74,7 @@ async function handleRequest(request) {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: messages,
+        max_tokens: 300, // Token efficiency
       })
     });
 

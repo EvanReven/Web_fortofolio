@@ -15,17 +15,44 @@ import {
   Send,
   Bot,
   User,
-  Loader2
+  Loader2,
+  Code2,
+  Mail,
+  Search,
+  Briefcase
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 // --- Chat Component ---
-function ChatAssistant() {
-  const [isOpen, setIsOpen] = useState(false);
+const TEASERS = [
+  "Berapa lama Evan belajar PHP?",
+  "Apa proyek terumit yang pernah Evan buat?",
+  "Apakah Evan bisa bahasa Inggris?",
+  "Apa keahlian utama Evan di Frontend?",
+  "Berapa rate jasa pembuatan web Evan?",
+];
+
+function ChatAssistant({ 
+  isOpen, 
+  setIsOpen,
+  hide
+}: { 
+  isOpen: boolean; 
+  setIsOpen: (open: boolean) => void;
+  hide?: boolean;
+}) {
   const [messages, setMessages] = useState<{ role: "user" | "model"; text: string }[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [teaserIndex, setTeaserIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTeaserIndex(prev => (prev + 1) % TEASERS.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -44,13 +71,15 @@ function ChatAssistant() {
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || "";
       
-      // Construct URL: use absolute if base exists, otherwise relative
-      const apiUrl = apiBase 
-        ? (apiBase.endsWith("/") ? `${apiBase}api/chat` : `${apiBase}/api/chat`)
-        : "/api/chat";
+      // Construct URL
+      let apiUrl = "/api/chat";
+      if (apiBase) {
+        apiUrl = apiBase.endsWith("/") ? `${apiBase}api/chat` : `${apiBase}/api/chat`;
+      }
       
-      if (!apiBase && window.location.hostname !== "localhost") {
-        console.warn("VITE_API_BASE_URL is missing. The chatbot might not work on production.");
+      const isProduction = window.location.hostname !== "localhost";
+      if (isProduction && !apiBase) {
+        throw new Error("VITE_API_BASE_URL belum diatur di Vercel. Silakan atur URL Cloudflare Worker Anda di Environment Variables Vercel.");
       }
 
       console.log("Connecting to AI at:", apiUrl);
@@ -90,13 +119,29 @@ function ChatAssistant() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end">
+    <div className={`fixed bottom-6 right-6 z-[100] flex flex-col items-end transition-opacity duration-300 ${hide ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.95, transformOrigin: "bottom right" }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            initial={{ opacity: 0, y: 50, scale: 0.8, filter: "blur(10px)" }}
+            animate={{ 
+              opacity: 1, 
+              y: 0, 
+              scale: 1,
+              filter: "blur(0px)" 
+            }}
+            exit={{ 
+              opacity: 0, 
+              y: 50, 
+              scale: 0.8,
+              filter: "blur(10px)"
+            }}
+            transition={{ 
+              type: "spring",
+              damping: 25,
+              stiffness: 200,
+              mass: 1
+            }}
             className="w-[90vw] sm:w-[400px] h-[500px] bg-vibe-surface rounded-2xl border border-white/10 shadow-2xl flex flex-col overflow-hidden mb-4"
           >
             {/* Header */}
@@ -133,7 +178,18 @@ function ChatAssistant() {
                 </div>
               )}
               {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, x: m.role === "user" ? 20 : -20, scale: 0.95 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ 
+                    type: "spring",
+                    damping: 20,
+                    stiffness: 300,
+                    delay: 0.05
+                  }}
+                  className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+                >
                   <div className={`max-w-[80%] p-3 rounded-xl text-sm ${
                     m.role === "user" 
                       ? "bg-vibe-primary text-black rounded-tr-none font-medium" 
@@ -141,7 +197,7 @@ function ChatAssistant() {
                   }`}>
                     {m.text}
                   </div>
-                </div>
+                </motion.div>
               ))}
               {isLoading && (
                 <div className="flex justify-start">
@@ -178,14 +234,48 @@ function ChatAssistant() {
         )}
       </AnimatePresence>
 
-      <motion.button
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-full bg-vibe-primary text-black flex items-center justify-center shadow-2xl shadow-vibe-primary/20 transition-all"
-      >
-        {isOpen ? <X className="w-6 h-6" /> : <MessageSquare className="w-6 h-6" />}
-      </motion.button>
+      <div className="flex flex-col items-end gap-3 pointer-events-none">
+        <AnimatePresence>
+          {!isOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 20, scale: 0.8 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 20, scale: 0.8 }}
+              className="flex flex-col items-end gap-2 pr-2"
+            >
+              {/* Dynamic Teaser */}
+              <div className="relative max-w-[200px] bg-vibe-surface/90 backdrop-blur-md px-4 py-3 rounded-2xl rounded-br-none border border-white/10 shadow-xl pointer-events-auto cursor-pointer group"
+                   onClick={() => setIsOpen(true)}>
+                <div className="absolute bottom-[-6px] right-[-1px] w-4 h-4 bg-vibe-surface border-r border-b border-white/10 transform rotate-45" />
+                <AnimatePresence mode="wait">
+                  <motion.p
+                    key={teaserIndex}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="text-[11px] text-gray-300 italic font-medium leading-relaxed"
+                  >
+                    "Tanya AI: {TEASERS[teaserIndex]}"
+                  </motion.p>
+                </AnimatePresence>
+                <div className="mt-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <span className="text-[8px] uppercase tracking-tighter text-vibe-primary font-bold">Klik untuk tanya</span>
+                   <ChevronRight className="w-2 h-2 text-vibe-primary" />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setIsOpen(!isOpen)}
+          className="w-14 h-14 rounded-full bg-vibe-primary text-black flex items-center justify-center shadow-2xl shadow-vibe-primary/20 transition-all pointer-events-auto"
+        >
+          {isOpen ? <X className="w-6 h-6" /> : <Bot className="w-7 h-7" />}
+        </motion.button>
+      </div>
     </div>
   );
 }
@@ -220,16 +310,165 @@ const TECH_STACK = [
 
 export default function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCommandBarOpen, setIsCommandBarOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const commands = [
+    { id: "proyek", name: "Lihat Proyek", icon: Briefcase, section: "Navigasi", action: () => document.getElementById("projects")?.scrollIntoView({ behavior: "smooth" }) },
+    { id: "keahlian", name: "Cek Keahlian", icon: Code2, section: "Navigasi", action: () => document.getElementById("stack")?.scrollIntoView({ behavior: "smooth" }) },
+    { id: "kontak", name: "Hubungi Yulius", icon: Mail, section: "Navigasi", action: () => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" }) },
+    { id: "chat", name: "Buka Chatbot AI", icon: MessageSquare, section: "Aksi", action: () => setIsChatOpen(true) },
+    { id: "github", name: "Buka GitHub", icon: Github, section: "Media Sosial", action: () => window.open("https://github.com", "_blank") },
+    { id: "linkedin", name: "Buka LinkedIn", icon: Linkedin, section: "Media Sosial", action: () => window.open("https://linkedin.com", "_blank") },
+  ];
+
+  const filteredCommands = searchQuery 
+    ? commands.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : commands;
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setIsCommandBarOpen(prev => !prev);
+      }
+      if (e.key === "Escape") {
+        setIsCommandBarOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+      const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolledPct = (winScroll / height) * 100;
+      setScrollProgress(scrolledPct);
+    };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   return (
     <div className="min-h-screen bg-vibe-bg text-gray-100 selection:bg-vibe-primary selection:text-black antialiased">
+      {/* Scroll Progress Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-vibe-primary z-[101] origin-left"
+        style={{ scaleX: scrollProgress / 100 }}
+      />
+      
+      {/* Command Bar Overlay */}
+      <AnimatePresence>
+        {isCommandBarOpen && (
+          <div className="fixed inset-0 z-[200] flex items-start sm:items-start justify-center sm:pt-[15vh] px-0 sm:px-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCommandBarOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative w-full h-full sm:h-auto sm:max-w-2xl bg-vibe-surface sm:border border-white/10 sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              <div className="p-4 sm:p-4 border-b border-white/10 flex items-center gap-3 bg-vibe-surface/80 backdrop-blur-md sticky top-0 z-10">
+                <Search className="w-5 h-5 text-gray-400" />
+                <input 
+                  autoFocus
+                  placeholder="Ketik perintah atau cari..." 
+                  className="w-full bg-transparent border-none outline-none text-lg text-white placeholder-gray-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button 
+                  onClick={() => setIsCommandBarOpen(false)}
+                  className="sm:hidden p-2 text-gray-400 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+                <kbd className="hidden sm:flex items-center gap-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-[10px] font-mono text-gray-500">
+                  ESC
+                </kbd>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-2 scrollbar-none">
+                {filteredCommands.length > 0 ? (
+                  <div className="space-y-4 py-2">
+                    {["Navigasi", "Aksi", "Media Sosial"].map(section => {
+                      const sectionCommands = filteredCommands.filter(c => c.section === section);
+                      if (sectionCommands.length === 0) return null;
+                      
+                      return (
+                        <div key={section} className="space-y-1">
+                          <h3 className="px-3 py-1 text-[10px] font-mono uppercase tracking-widest text-gray-500">{section}</h3>
+                          {sectionCommands.map(cmd => (
+                            <button
+                              key={cmd.id}
+                              onClick={() => {
+                                cmd.action();
+                                setIsCommandBarOpen(false);
+                                setSearchQuery("");
+                              }}
+                              className="w-full flex items-center gap-3 px-3 py-4 sm:py-3 rounded-xl hover:bg-white/5 text-gray-300 hover:text-vibe-primary transition-colors text-left group active:bg-white/10"
+                            >
+                              <cmd.icon className="w-5 h-5 opacity-50 group-hover:opacity-100" />
+                              <span className="flex-1 text-sm font-medium">{cmd.name}</span>
+                              <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all" />
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center">
+                    <p className="text-gray-500">Tidak ada perintah yang ditemukan untuk "{searchQuery}"</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-black/20 border-t border-white/5 flex justify-between items-center text-[10px] font-mono text-gray-500 uppercase tracking-tighter mt-auto">
+                <div className="flex gap-4">
+                  <span className="hidden sm:inline">↑↓ Navigasi</span>
+                  <span className="hidden sm:inline">↵ Pilih</span>
+                  <span className="sm:hidden">Geser untuk navigasi</span>
+                </div>
+                <span>Yulius Portfolio Cmd Bar</span>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Floating Action Button (FAB) for Search on Mobile */}
+      <AnimatePresence>
+        {!isMenuOpen && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => setIsCommandBarOpen(true)}
+            className="fixed bottom-6 left-6 w-14 h-14 rounded-full bg-vibe-surface border border-white/10 text-vibe-primary flex items-center justify-center shadow-2xl z-[90] md:hidden"
+          >
+            <Search className="w-6 h-6" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled ? "bg-vibe-bg/80 backdrop-blur-md border-b border-white/10 py-4" : "bg-transparent py-6"
@@ -247,6 +486,17 @@ export default function App() {
           </motion.div>
 
           <div className="hidden md:flex items-center gap-8">
+            <button 
+              onClick={() => setIsCommandBarOpen(true)}
+              className="flex items-center gap-3 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 transition-colors group"
+            >
+              <Search className="w-4 h-4 text-gray-500 group-hover:text-vibe-primary transition-colors" />
+              <span className="text-[10px] text-gray-500 group-hover:text-gray-300 transition-colors uppercase tracking-widest font-medium">Search...</span>
+              <kbd className="flex items-center gap-1 px-1.5 py-0.5 bg-white/10 rounded text-[9px] font-mono text-gray-400">
+                <span className="text-[11px]">⌘</span>K
+              </kbd>
+            </button>
+
             {NAV_LINKS.map((link, i) => (
               <motion.a
                 key={link.name}
@@ -255,10 +505,17 @@ export default function App() {
                 rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="text-sm font-medium text-gray-400 hover:text-vibe-primary transition-colors tracking-widest uppercase"
+                whileHover={{ y: -2, color: "#00FF9C" }}
+                transition={{ 
+                  delay: i * 0.1,
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 10
+                }}
+                className="text-sm font-medium text-gray-400 transition-colors tracking-widest uppercase relative group"
               >
                 {link.name}
+                <span className="absolute -bottom-1 left-0 w-0 h-px bg-vibe-primary transition-all duration-300 group-hover:w-full" />
               </motion.a>
             ))}
             <motion.button 
@@ -302,14 +559,28 @@ export default function App() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <a href="#projects" className="group relative px-8 py-4 bg-vibe-primary text-black font-bold uppercase tracking-widest overflow-hidden transition-all glow-hover flex items-center justify-center">
+              <motion.a 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                href="#projects" 
+                className="group relative px-8 py-4 bg-vibe-primary text-black font-bold uppercase tracking-widest overflow-hidden transition-all glow-hover flex items-center justify-center rounded-sm"
+              >
                 <span className="relative z-10 flex items-center gap-2">
                   Lihat Proyek <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </span>
-              </a>
-              <a href="https://wa.me/6285249761877" target="_blank" rel="noopener noreferrer" className="px-8 py-4 border border-white/20 hover:border-vibe-primary transition-colors font-bold uppercase tracking-widest flex items-center justify-center">
+              </motion.a>
+              <motion.a 
+                whileHover={{ scale: 1.02, borderColor: "rgba(0, 255, 156, 0.5)" }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                href="https://wa.me/6285249761877" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="px-8 py-4 border border-white/20 font-bold uppercase tracking-widest flex items-center justify-center rounded-sm transition-colors"
+              >
                 Hubungi Saya
-              </a>
+              </motion.a>
             </div>
           </motion.div>
         </div>
@@ -364,8 +635,14 @@ export default function App() {
               rel="noopener noreferrer"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
+              whileHover={{ y: -10 }}
               viewport={{ once: true }}
-              transition={{ delay: i % 2 * 0.2 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 300,
+                damping: 20,
+                delay: i % 2 * 0.2 
+              }}
               className="group cursor-pointer block"
             >
               <div className="relative aspect-[16/9] overflow-hidden bg-vibe-surface mb-6 border border-white/5 rounded-lg">
@@ -450,9 +727,22 @@ export default function App() {
 
           <div className="mt-32 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
             <div className="flex items-center gap-8">
-              <a href="#" className="text-gray-500 hover:text-white transition-colors"><Github className="w-5 h-5" /></a>
-              <a href="#" className="text-gray-500 hover:text-white transition-colors"><Twitter className="w-5 h-5" /></a>
-              <a href="#" className="text-gray-500 hover:text-white transition-colors"><Linkedin className="w-5 h-5" /></a>
+              {[
+                { icon: Github, href: "#" },
+                { icon: Twitter, href: "#" },
+                { icon: Linkedin, href: "#" }
+              ].map((social, idx) => (
+                <motion.a 
+                  key={idx}
+                  whileHover={{ y: -5, scale: 1.2, color: "#00FF9C" }}
+                  whileTap={{ scale: 0.9 }}
+                  transition={{ type: "spring", stiffness: 300 }}
+                  href={social.href} 
+                  className="text-gray-500 transition-colors"
+                >
+                  <social.icon className="w-5 h-5" />
+                </motion.a>
+              ))}
             </div>
             <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest text-center">
               &copy; 2026 YULIUS EVAN KARUNIA. DIBUAT DENGAN LOGIKA & SEMANGAT.
@@ -480,6 +770,16 @@ export default function App() {
               <X className="w-8 h-8" />
             </button>
             <div className="flex flex-col gap-6">
+              <button 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsCommandBarOpen(true);
+                }}
+                className="text-4xl sm:text-6xl font-display font-bold uppercase tracking-tighter text-vibe-primary flex items-center justify-between group"
+              >
+                Cari / Search
+                <Search className="w-8 h-8" />
+              </button>
               {NAV_LINKS.map((link, i) => (
                 <motion.a
                   initial={{ opacity: 0, x: -20 }}
@@ -504,7 +804,7 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-      <ChatAssistant />
+      <ChatAssistant isOpen={isChatOpen} setIsOpen={setIsChatOpen} hide={isMenuOpen} />
     </div>
   );
 }

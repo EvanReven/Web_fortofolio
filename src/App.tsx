@@ -43,26 +43,47 @@ function ChatAssistant() {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE_URL || "";
-      const response = await fetch(`${apiBase}/api/chat`, {
+      
+      // Construct URL: use absolute if base exists, otherwise relative
+      const apiUrl = apiBase 
+        ? (apiBase.endsWith("/") ? `${apiBase}api/chat` : `${apiBase}/api/chat`)
+        : "/api/chat";
+      
+      if (!apiBase && window.location.hostname !== "localhost") {
+        console.warn("VITE_API_BASE_URL is missing. The chatbot might not work on production.");
+      }
+
+      console.log("Connecting to AI at:", apiUrl);
+
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
           message: input,
           history: messages.map(m => ({
             role: m.role === "user" ? "user" : "model",
-            parts: [{ text: m.text }]
+            content: m.text // Send as content for broader compatibility
           }))
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
       if (data.text) {
         setMessages(prev => [...prev, { role: "model", text: data.text }]);
-      } else if (data.error) {
-        setMessages(prev => [...prev, { role: "model", text: `Error: ${data.error}` }]);
+      } else {
+        throw new Error("Invalid response format from server");
       }
-    } catch (error) {
-      setMessages(prev => [...prev, { role: "model", text: "Terjadi kesalahan koneksi. Silakan coba lagi nanti." }]);
+    } catch (error: any) {
+      console.error("Chat Connection Error:", error);
+      setMessages(prev => [...prev, { 
+        role: "model", 
+        text: `Maaf, saya sedang mengalami gangguan koneksi ke otak AI saya. Detail: ${error.message}` 
+      }]);
     } finally {
       setIsLoading(false);
     }

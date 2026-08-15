@@ -25,10 +25,10 @@ KEY INFO:
 - Projects: Krypto Pulse, Reffcode ID.
 
 RULES:
-1. MANDATORY: The first response to any new user MUST be in Indonesia (Bahasa Indonesia).
-2. For subsequent messages, follow the language used by the user.
-3. Be extremely concise to save tokens. Use bullet points where appropriate.
-4. Keep answers professional and expert.
+1. Always respond in the language used by the user (Indonesian or English).
+2. If the user writes in English, reply in English. If in Indonesian, reply in Indonesian.
+3. Be concise, helpful, and professional. Use bullet points where appropriate.
+4. Keep answers focused on Yulius's engineering skills, projects, and collaboration.
 `;
 
 // API routes
